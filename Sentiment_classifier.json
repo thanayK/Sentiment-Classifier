@@ -1,0 +1,426 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import random\n",
+    "\n",
+    "class Sentiment:\n",
+    "    NEGATIVE=\"NEGATIVE\"\n",
+    "    NEUTRAL=\"NEUTRAL\"\n",
+    "    POSITIVE=\"POSITIVE\"\n",
+    "class Review:\n",
+    "    def __init__(self,text,score):\n",
+    "        self.text=text\n",
+    "        self.score=score\n",
+    "        self.sentiment=self.get_sentiment()\n",
+    "    def get_sentiment(self):\n",
+    "        if self.score <=2:\n",
+    "            return Sentiment.NEGATIVE\n",
+    "        elif self.score ==3:\n",
+    "            return Sentiment.NEUTRAL\n",
+    "        else:\n",
+    "            return Sentiment.POSITIVE\n",
+    "        \n",
+    "class ReviewContainer:\n",
+    "    def __init__(self,reviews):\n",
+    "        self.reviews=reviews\n",
+    "        \n",
+    "    def get_text(self):\n",
+    "        return [x.text for x in self.reviews]\n",
+    "    \n",
+    "    def get_sentiment(self):\n",
+    "        return [x.sentiment for x in self.reviews]\n",
+    "        \n",
+    "    def evenly_distribute(self):\n",
+    "        negative=list(filter(lambda x: x.sentiment == Sentiment.NEGATIVE,self.reviews))\n",
+    "        positive=list(filter(lambda x: x.sentiment == Sentiment.POSITIVE,self.reviews))\n",
+    "        positive_shrunk=positive[:len(negative)]\n",
+    "        self.reviews=negative+positive_shrunk\n",
+    "        random.shuffle(self.reviews)\n",
+    "        "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'It was a decent read.. typical story line. Nothing unsavory as so many are. Just a slice of life, plausible.'"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "import json\n",
+    "\n",
+    "file_name=\"Books_small_10000.json\"\n",
+    "\n",
+    "reviews=[]\n",
+    "with open(file_name) as f:\n",
+    "    for line in f:\n",
+    "        review=json.loads(line)\n",
+    "        reviews.append(Review(review['reviewText'],review['overall']))\n",
+    "reviews[4].text\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.model_selection import train_test_split\n",
+    "training,test=train_test_split(reviews,test_size=0.33,random_state=42)\n",
+    "\n",
+    "train_container=ReviewContainer(training)\n",
+    "\n",
+    "test_container=ReviewContainer(test)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "436\n",
+      "436\n"
+     ]
+    }
+   ],
+   "source": [
+    "train_container.evenly_distribute()\n",
+    "train_x=train_container.get_text()\n",
+    "train_y=train_container.get_sentiment()\n",
+    "\n",
+    "test_container.evenly_distribute()\n",
+    "test_x=test_container.get_text()\n",
+    "test_y=test_container.get_sentiment()\n",
+    "\n",
+    "print(train_y.count(Sentiment.NEGATIVE))\n",
+    "print(train_y.count(Sentiment.POSITIVE))\n",
+    "      "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "I don't like giving negative reviews. I try not to review anything I haven't read.  I TRIED to read it all the way through.  But... it begins with back story, and it just goes on and on... and on... and on.  It was like reading a diary where the writer has to tell you every single thing that happened to them that day-- in great detail.  I just couldn't finish it.  It was going nowhere.  The characters aren't likeable.  It DESPERATELY needs editing.  I just started scrolling through the book, skipping chapter after chapter in hopes it would be better soon.  I gave up about 60% in when the story continued to drag on.  Thank goodness it was free.\n",
+      "[[0. 0. 0. ... 0. 0. 0.]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer\n",
+    "\n",
+    "vectorizer = TfidfVectorizer()\n",
+    "train_x_vectors=vectorizer.fit_transform(train_x)\n",
+    "\n",
+    "test_x_vectors=vectorizer.transform(test_x)\n",
+    "\n",
+    "print(train_x[0])\n",
+    "print(train_x_vectors[0].toarray())\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### SVM Classifier"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Support vector machines (SVMs) are powerful yet flexible supervised machine learning algorithms which are used both for classification and regression. But generally, they are used in classification problems.An SVM model is basically a representation of different classes in a hyperplane in multidimensional space. The hyperplane will be generated in an iterative manner by SVM so that the error can be minimized. The goal of SVM is to divide the datasets into classes to find a maximum marginal hyperplane (MMH).\n",
+    "#### The followings are important concepts in SVM −\n",
+    "#### 1) Support Vectors − Datapoints that are closest to the hyperplane is called support vectors. Separating line will be defined with the help of these data points.\n",
+    "\n",
+    "#### 2) Hyperplane − As we can see in the above diagram, it is a decision plane or space which is divided between a set of objects having different classes.\n",
+    "\n",
+    "#### 3) Margin − It may be defined as the gap between two lines on the closet data points of different classes. It can be calculated as the perpendicular distance from the line to the support vectors. Large margin is considered as a good margin and small margin is considered as a bad margin.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array(['NEGATIVE'], dtype='<U8')"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn import svm\n",
+    "\n",
+    "clf_svm=svm.SVC(kernel='linear')\n",
+    "\n",
+    "clf_svm.fit(train_x_vectors,train_y)\n",
+    "\n",
+    "test_x[0]\n",
+    "\n",
+    "clf_svm.predict(test_x_vectors[0])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Decision Tree Classifier"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### A Decision Tree is a simple representation for classifying examples. It is a Supervised Machine Learning where the data is continuously split according to a certain parameter.\n",
+    "#### Decision Tree consists of :\n",
+    "#### 1) Nodes : Test for the value of a certain attribute.\n",
+    "#### 2) Edges/ Branch : Correspond to the outcome of a test and connect to the next node or leaf.\n",
+    "#### 3) Leaf nodes : Terminal nodes that predict the outcome (represent class labels or class distribution).\n",
+    "#### 1. Classification trees (Yes/No types) :\n",
+    "#### What we’ve seen above is an example of classification tree, where the outcome was a variable like ‘fit’ or ‘unfit’. Here the decision variable is Categorical/ discrete.\n",
+    "#### Such a tree is built through a process known as binary recursive partitioning. This is an iterative process of splitting the data into partitions, and then splitting it up further on each of the branches.\n",
+    "#### 2. Regression trees (Continuous data types) :\n",
+    "#### Decisionwhere the target variable can take continuous values (typically real numbers) are called regression trees. (e.g. the price of a house, or a patient’s length of stay in a hospital)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array(['NEGATIVE'], dtype='<U8')"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn.tree import DecisionTreeClassifier\n",
+    "\n",
+    "clf_dec=DecisionTreeClassifier()\n",
+    "clf_dec.fit(train_x_vectors,train_y)\n",
+    "\n",
+    "clf_dec.predict(test_x_vectors[0])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Logistic Regression"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Logistic Regression was used in the biological sciences in early twentieth century. It was then used in many social science applications. Logistic Regression is used when the dependent variable(target) is categorical.\n",
+    "#### For example,\n",
+    "#### 1)To predict whether an email is spam (1) or (0)\n",
+    "#### 2)Whether the tumor is malignant (1) or not (0)\n",
+    "#### Consider a scenario where we need to classify whether an email is spam or not. If we use linear regression for this problem, there is a need for setting up a threshold based on which classification can be done. Say if the actual class is malignant, predicted continuous value 0.4 and the threshold value is 0.5, the data point will be classified as not malignant which can lead to serious consequence in real time.From this example, it can be inferred that linear regression is not suitable for classification problem. Linear regression is unbounded, and this brings logistic regression into picture. Their value strictly ranges from 0 to 1."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\thanay\\Anaconda3\\lib\\site-packages\\sklearn\\linear_model\\logistic.py:432: FutureWarning: Default solver will be changed to 'lbfgs' in 0.22. Specify a solver to silence this warning.\n",
+      "  FutureWarning)\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array(['NEGATIVE'], dtype='<U8')"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn.linear_model import LogisticRegression\n",
+    "\n",
+    "clf_log=LogisticRegression()\n",
+    "clf_log.fit(train_x_vectors,train_y)\n",
+    "\n",
+    "clf_dec.predict(test_x_vectors[0])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Mean Accuracy"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.8076923076923077\n",
+      "0.8028846153846154\n",
+      "0.6730769230769231\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(clf_svm.score(test_x_vectors,test_y))\n",
+    "print(clf_log.score(test_x_vectors,test_y))\n",
+    "print(clf_dec.score(test_x_vectors,test_y))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### F1 Score"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.80582524, 0.80952381])"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn.metrics import f1_score\n",
+    "\n",
+    "f1_score(test_y,clf_svm.predict(test_x_vectors),average=None,labels=[Sentiment.POSITIVE,Sentiment.NEGATIVE])\n",
+    "#f1_score(test_y,clf_dec.predict(test_x_vectors),average=None,labels=[Sentiment.POSITIVE,Sentiment.NEUTRAL,Sentiment.NEGATIVE])\n",
+    "#f1_score(test_y,clf_log.predict(test_x_vectors),average=None,labels=[Sentiment.POSITIVE,Sentiment.NEUTRAL,Sentiment.NEGATIVE])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Output"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array(['NEGATIVE', 'NEGATIVE', 'POSITIVE', 'NEGATIVE', 'POSITIVE'],\n",
+       "      dtype='<U8')"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "test_set=[\"Please dont ever buy this product guyzz....its my request....look at this picture....the pencils would look good as hell at first sight....but when u sharpen them...then u will see how worst a pencil could ever be.... please dont buy it....dont waste your money.... \",\"Don't buy this. Everytime you try to sharpen it, the needle keeps on breaking.. Pencils are very weak.. \",\"Super!!! Loved it!\",\"Not worth your money\",\"average\"]\n",
+    "new_test=vectorizer.transform(test_set)\n",
+    "\n",
+    "clf_svm.predict(new_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.4"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
